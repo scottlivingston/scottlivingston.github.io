@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <generator uri="http://jekyllrb.com" version="3.5.2">Jekyll</generator>
+  
+  
+  <link href="/feed.xml" rel="self" type="application/atom+xml" />
+  <link href="/" rel="alternate" type="text/html" />
+  <updated>2017-09-27T23:56:24-07:00</updated>
+  <id>//</id>
+
+  
+    <title type="html">Scott Livingston</title>
+  
+
+  
+    <subtitle>Programming, Technology, and Visual Effects</subtitle>
+  
+
+  
+
+  
+  
+    <entry>
+      
+      <title type="html">Welcome to Jekyll!</title>
+      
+      <link href="/welcome-to-jekyll/" rel="alternate" type="text/html" title="Welcome to Jekyll!" />
+      <published>2017-09-21T22:21:19-07:00</published>
+      <updated>2017-09-21T22:21:19-07:00</updated>
+      <id>/welcome-to-jekyll</id>
+      <content type="html" xml:base="/welcome-to-jekyll/">&lt;p&gt;You’ll find this post in your &lt;code class=&quot;highlighter-rouge&quot;&gt;_posts&lt;/code&gt; directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run &lt;code class=&quot;highlighter-rouge&quot;&gt;jekyll serve&lt;/code&gt;, which launches a web server and auto-regenerates your site when a file is updated.&lt;/p&gt;
+
+&lt;p&gt;To add new posts, simply add a file in the &lt;code class=&quot;highlighter-rouge&quot;&gt;_posts&lt;/code&gt; directory that follows the convention &lt;code class=&quot;highlighter-rouge&quot;&gt;YYYY-MM-DD-name-of-post.ext&lt;/code&gt; and includes the necessary front matter. Take a look at the source for this post to get an idea about how it works.&lt;/p&gt;
+
+&lt;p&gt;Jekyll also offers powerful support for code snippets:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;print_hi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nb&quot;&gt;puts&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Hi, &lt;/span&gt;&lt;span class=&quot;si&quot;&gt;#{&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;print_hi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Tom'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;#=&amp;gt; prints 'Hi, Tom' to STDOUT.&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Check out the &lt;a href=&quot;https://jekyllrb.com/docs/home&quot;&gt;Jekyll docs&lt;/a&gt; for more info on how to get the most out of Jekyll. File all bugs/feature requests at &lt;a href=&quot;https://github.com/jekyll/jekyll&quot;&gt;Jekyll’s GitHub repo&lt;/a&gt;. If you have questions, you can ask them on &lt;a href=&quot;https://talk.jekyllrb.com/&quot;&gt;Jekyll Talk&lt;/a&gt;.&lt;/p&gt;</content>
+
+      
+      
+      
+      
+      
+
+      
+
+      
+        <category term="jekyll" />
+      
+        <category term="update" />
+      
+
+      
+
+      
+        <summary type="html">You’ll find this post in your _posts directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run jekyll serve, which launches a web server and auto-regenerates your site when a file is updated.</summary>
+      
+
+      
+      
+    </entry>
+  
+  
+  
+    <entry>
+      
+      <title type="html">Understanding Akka’s Quarantine State</title>
+      
+      <link href="/understanding-akkas-quarantine-state/" rel="alternate" type="text/html" title="Understanding Akka's Quarantine State" />
+      <published>2016-09-07T19:00:00-07:00</published>
+      <updated>2016-09-07T19:00:00-07:00</updated>
+      <id>/understanding-akkas-quarantine-state</id>
+      <content type="html" xml:base="/understanding-akkas-quarantine-state/">&lt;p&gt;At Credit Karma, my team maintains a service powered by a multi node &lt;a href=&quot;http://akka.io/&quot;&gt;Akka&lt;/a&gt; cluster. Akka is a framework for building distributed, concurrent, and message-driven systems in Scala. It helps us easily scale our service, and gives us some resilience when problems inevitably happen in production. In this post, I’ll cover two problems - auto down, and quarantine - and share what we learned when we had problems.&lt;/p&gt;
+
+&lt;p&gt;One day, all large number of requests going to our service started failing. Looking at our monitoring tool, we saw that the one of the nodes that listens for REST calls was no longer making calls to other nodes in the cluster. So we started digging though our logs to try and figure out what happened. This is what we found:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-nohighlight&quot;&gt;WARN Cluster Node [akka.tcp://***] - Marking node(s) as UNREACHABLE [Member(address = akka.tcp://***, status = Up)]
+INFO Cluster Node [akka.tcp://***] - Leader is auto-downing unreachable node [akka.tcp://***]
+INFO Cluster Node [akka.tcp://***] - Marking unreachable node [akka.tcp://***] as [Down]
+INFO Cluster Node [akka.tcp://***] - Leader is removing unreachable node [akka.tcp://***]
+WARN Tried to associate with unreachable remote address [akka.tcp://***]. Address is now gated for↩
+  5000 ms, all messages to this address will be delivered to dead letters. Reason: [The remote system↩
+  has quarantined this system. No further associations to the remote system are possible until this↩
+  system is restarted.]
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As a new user of Akka, I had never seen something like this happen before let alone know what it means when a node gets quarantined. But the error message was clear enough; we needed to restart that node’s actor system to fix it. After that, everything was back to normal and the task switched from firefighting to investigation, starting with what the heck quarantine actually means.&lt;/p&gt;
+
+&lt;h2 id=&quot;quarantine&quot;&gt;Quarantine&lt;/h2&gt;
+&lt;p&gt;An actor system can be placed in a quarantine state when a remote actor system determines that further communication to that system would be harmful. It does this by dropping all incoming messages from, and outgoing messages to the quarantined actor system. The &lt;a href=&quot;http://doc.akka.io/docs/akka/current/scala/remoting.html#Lifecycle_and_Failure_Recovery_Model&quot;&gt;Akka documentation&lt;/a&gt; lists three reasons why a node would become quarantined:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ul&gt;
+    &lt;li&gt;System message delivery failure&lt;/li&gt;
+    &lt;li&gt;Remote DeathWatch trigger&lt;/li&gt;
+    &lt;li&gt;Cluster MemberRemoved event&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This is a pretty short list without a ton of information, so let’s dig into each one of them.&lt;/p&gt;
+
+&lt;h3 id=&quot;system-message-delivery-failure&quot;&gt;System message delivery failure&lt;/h3&gt;
+&lt;p&gt;This one is less specific than the other two so we will start with it. The code that powers it can be found &lt;a href=&quot;https://github.com/akka/akka/blob/v2.4.4/akka-remote/src/main/scala/akka/remote/Remoting.scala#L475&quot;&gt;here&lt;/a&gt;:&lt;/p&gt;
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;HopelessAssociation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;localAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;remoteAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Some&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;uid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;reason&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;log&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;error&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reason&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Association to [{}] with UID [{}] irrecoverably failed. Quarantining address.&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;remoteAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;uid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;settings&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;QuarantineDuration&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;FiniteDuration&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;endpoints&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;markAsQuarantined&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;remoteAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;uid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Deadline&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;now&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;eventPublisher&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;notifyListeners&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;QuarantinedEvent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;remoteAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;uid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// disabled
+&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;nc&quot;&gt;Stop&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;HopelessAssociation is an exception that is thrown when Akka gives up trying to associate a node with a cluster. There are a few cases where this can happen, but it’s all pretty deep in the internals of Akka. Suffice to say, the application logic of your code will most likely not be the cause of this quarantine.&lt;/p&gt;
+
+&lt;h3 id=&quot;remote-deathwatch-trigger&quot;&gt;Remote DeathWatch trigger&lt;/h3&gt;
+&lt;p&gt;In addition to the &lt;a href=&quot;http://doc.akka.io/docs/akka/current/scala/actors.html#deathwatch-scala&quot;&gt;normal actor death watch mechanism&lt;/a&gt;, the remote death watch system augments itself with a periodic heartbeat to detect when a remote actor has failed due to a network problem or a remote JVM crash.
+The code that powers this transition is shown &lt;a href=&quot;https://github.com/akka/akka/blob/v2.4.4/akka-remote/src/main/scala/akka/remote/RemoteWatcher.scala#L160&quot;&gt;here&lt;/a&gt;:&lt;/p&gt;
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;reapUnreachable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;watchingNodes&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;foreach&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;unreachable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;failureDetector&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isAvailable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;log&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;warning&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Detected unreachable: [{}]&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;quarantine&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;addressUids&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;publishAddressTerminated&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;unreachable&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;reapUnreachable()&lt;/code&gt; is called periodically by a schedule call higher up in the same file. If an actor is watching another actor on a remote actor system and the failure detector has deemed it unavailable, then the watched actor system becomes quarantined. This is an important distinction because if a remote actor system becomes temporarily unreachable, but nothing is watching it, it &lt;strong&gt;will not&lt;/strong&gt; become quarantined.&lt;/p&gt;
+
+&lt;h3 id=&quot;cluster-memberremoved-event&quot;&gt;Cluster MemberRemoved event&lt;/h3&gt;
+&lt;p&gt;This one is a little tricky and, in the end, what caused the problem at the beginning of the post. The code can be found &lt;a href=&quot;https://github.com/akka/akka/blob/v2.4.4/akka-cluster/src/main/scala/akka/cluster/ClusterRemoteWatcher.scala#L93&quot;&gt;here&lt;/a&gt;:&lt;/p&gt;
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;memberRemoved&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Member&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;previousStatus&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;MemberStatus&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;selfAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;clusterNodes&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;previousStatus&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MemberStatus&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Down&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;quarantine&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Some&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;uniqueAddress&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;uid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;publishAddressTerminated&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;Nodes can be removed from a cluster from one of two states: &lt;code class=&quot;highlighter-rouge&quot;&gt;Exiting&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt;. The main difference between these states is &lt;code class=&quot;highlighter-rouge&quot;&gt;Exiting&lt;/code&gt; is the happy path, where as &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt; is the sad path. If a node is removed from the cluster while in the &lt;code class=&quot;highlighter-rouge&quot;&gt;Exiting&lt;/code&gt; state, then the node will not be quarantined. If the node is removed while in the &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt; state, then it will be quarantined.&lt;/p&gt;
+
+&lt;p&gt;So what caused the errors we saw? Before we get there we have to talk about one more thing.&lt;/p&gt;
+
+&lt;h2 id=&quot;automatic-downing&quot;&gt;Automatic Downing&lt;/h2&gt;
+&lt;p&gt;When a member node in an Akka cluster becomes unreachable, the state of the cluster essentially becomes locked unless the unreachable node becomes reachable again, or it is marked as &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt;. There are two ways to do this, &lt;a href=&quot;http://doc.akka.io/docs/akka/current/scala/cluster-usage.html#Automatic_vs__Manual_Downing&quot;&gt;manually or automatically&lt;/a&gt;. When using the automatic system, a timeout is set that will automatically mark the unreachable node as &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt; if it stays unreachable for longer than the timeout.&lt;/p&gt;
+
+&lt;p&gt;While we were developing the service, we had automatic downing enabled and set trigger after only a few seconds. Experienced Akka developers may look at this and think, “The docs say not to use auto-down in production!” and they would be correct. The simple fact is, we had forgotten it was there and it made it into production. Because of this, small network problems were causing nodes to be marked as unreachable, immediately transitioning them to &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt;, and then promptly removing them. As we learned earlier, if a node is &lt;code class=&quot;highlighter-rouge&quot;&gt;Down&lt;/code&gt; when it’s removed from the cluster, it will get quarantined.&lt;/p&gt;
+
+&lt;p&gt;Sometimes this would occur on one of the dedicated REST nodes and, even though they were quarantined from the rest of the cluster, the client would continue to make calls to it which caused errors. It has been some time now since we removed the auto-down flag from our config file and we have never had a node get quarantined since.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-we-learned&quot;&gt;What we learned&lt;/h2&gt;
+
+&lt;h3 id=&quot;things-will-fail-so-try-to-make-it-graceful&quot;&gt;Things will fail, so try to make it graceful.&lt;/h3&gt;
+&lt;p&gt;We built our Akka cluster to stay available in all kinds of situations, but you cannot protect against everything. The best thing to do is make sure you can fail gracefully. In our case, the client we built to call our service is smart enough to retry in the event of a failure on a different node.&lt;/p&gt;
+
+&lt;h3 id=&quot;sometimes-the-best-documentation-is-the-code-itself&quot;&gt;Sometimes the best documentation is the code itself.&lt;/h3&gt;
+&lt;p&gt;Sometimes, when faced with a problem, you have to go to the source to see what’s actually happening. It can be rather daunting when you first start, but a good integrated development environment can help immensely. I recommend starting from a single point and branching out. In this case, I knew that a &lt;code class=&quot;highlighter-rouge&quot;&gt;QuarantineEvent&lt;/code&gt; is passed onto the event bus when a quarantine happens. So I started by looking at all the places where that event is used, and then found only the places that put that event on the event bus.&lt;/p&gt;</content>
+
+      
+      
+      
+      
+      
+
+      
+
+      
+
+      
+
+      
+        <summary type="html">At Credit Karma, my team maintains a service powered by a multi node Akka cluster. Akka is a framework for building distributed, concurrent, and message-driven systems in Scala. It helps us easily scale our service, and gives us some resilience when problems inevitably happen in production. In this post, I’ll cover two problems - auto down, and quarantine - and share what we learned when we had problems.</summary>
+      
+
+      
+      
+    </entry>
+  
+  
+</feed>
